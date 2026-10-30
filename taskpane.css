@@ -36,6 +36,9 @@ header { display: flex; align-items: center; justify-content: space-between; mar
 .arrow { color: var(--muted); }
 .sugg { border-color: var(--good); color: var(--good); padding: 1px 8px; white-space: pre-wrap; }
 .msg { color: var(--muted); font-size: 12px; margin: 2px 0 4px; }
+.own { display: flex; gap: 4px; margin: 2px 0 6px; }
+.own input { flex: 1; min-width: 0; font: inherit; padding: 3px 6px; border: 1px solid var(--accent); border-radius: 6px; }
+.own button { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .acts { display: flex; gap: 4px; }
 .acts button { font-size: 12px; padding: 1px 8px; }
 

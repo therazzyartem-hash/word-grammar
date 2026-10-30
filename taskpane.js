@@ -17,6 +17,7 @@ const state = {
   dismissed: new Set(), // «не ошибка» для конкретного места
   ignored: new Set(),   // словарь
   expanded: new Set(),  // раскрытые карточки (по тексту абзаца)
+  editing: new Set(),   // ошибки, для которых открыто поле «своё исправление»
   lang: 'ru-RU',
   auto: true,
   track: false,
@@ -61,11 +62,13 @@ function isSpelling(m) {
   return m.category === 'TYPOS' || /MORFOLOGIK|SPELL/i.test(m.rule);
 }
 
+const matchKey = (text, m) => text + '|' + m.offset + '|' + m.rule;
+
 function visibleMatches(text) {
   const ms = state.cache.get(text);
   if (!ms) return [];
   return ms.filter(m =>
-    !state.dismissed.has(text + '|' + m.offset + '|' + m.rule) &&
+    !state.dismissed.has(matchKey(text, m)) &&
     !(isSpelling(m) && state.ignored.has(m.bad.toLowerCase())));
 }
 
@@ -348,9 +351,11 @@ function render() {
     rows.push({ index, text, ms });
   });
 
-  const key = JSON.stringify([rows.map(r => [r.index, r.text, r.ms.length]), [...state.expanded], total, state.busy]);
+  const key = JSON.stringify([rows.map(r => [r.index, r.text, r.ms.length]), [...state.expanded], [...state.editing], total, state.busy]);
   updateStatus();
   if (key === state.lastRender) return;
+  // не перерисовываем, пока человек вписывает своё исправление — иначе текст в поле пропадёт
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest('form.own')) return;
   state.lastRender = key;
 
   const totalEl = $('total');
@@ -360,7 +365,8 @@ function render() {
     : 'Ошибок не найдено';
   const fixAll = $('fixAll');
   fixAll.disabled = !fixable || state.busy;
-  fixAll.textContent = fixable ? `Исправить все (${fixable})` : 'Исправить все';
+  fixAll.textContent = fixable ? `Исправить все (${fixable})`
+    : total ? 'Сам исправить не могу — поправь ниже' : 'Исправить все';
 
   const list = $('list');
   if (!rows.length) { list.innerHTML = ''; return; }
@@ -374,8 +380,13 @@ function render() {
           ${m.repl.length ? '<span class="arrow">→</span>' + m.repl.map((r, ri) =>
             `<button class="sugg" data-act="one" data-i="${index}" data-k="${k}" data-r="${ri}">${esc(r) || '(удалить)'}</button>`).join('') : ''}
         </div>
-        <div class="msg">${esc(m.message)}${isLikelyName(m, text) ? ' Похоже на имя — сам не исправляю: выбери вариант или добавь в словарь.' : ''}</div>
+        <div class="msg">${esc(m.message)}${isLikelyName(m, text) ? ' Похоже на имя — сам не исправляю: выбери вариант или добавь в словарь.' : ''}${m.repl.length ? '' : ' Готового варианта нет — впиши правильный.'}</div>
+        ${!m.repl.length || state.editing.has(matchKey(text, m)) ? `
+        <form class="own" data-i="${index}" data-k="${k}">
+          <input value="${esc(m.bad)}" aria-label="Своё исправление"><button>Заменить</button>
+        </form>` : ''}
         <div class="acts">
+          ${m.repl.length && !state.editing.has(matchKey(text, m)) ? `<button data-act="edit" data-i="${index}" data-k="${k}">Своё…</button>` : ''}
           <button data-act="show" data-i="${index}" data-k="${k}">Показать</button>
           <button data-act="dismiss" data-i="${index}" data-k="${k}">Не ошибка</button>
           ${isSpelling(m) ? `<button data-act="dict" data-i="${index}" data-k="${k}">В словарь</button>` : ''}
@@ -411,8 +422,13 @@ function onListClick(e) {
     applyFixes([{ index, text, matches: [{ m, repl: m.repl[+el.dataset.r] }] }]);
   } else if (act === 'show' && m) {
     selectMatch(index, m);
+  } else if (act === 'edit' && m) {
+    state.editing.add(matchKey(text, m));
+    render();
+    const input = $('list').querySelector(`form.own[data-i="${index}"][data-k="${el.dataset.k}"] input`);
+    if (input) { input.focus(); input.select(); }
   } else if (act === 'dismiss' && m) {
-    state.dismissed.add(text + '|' + m.offset + '|' + m.rule);
+    state.dismissed.add(matchKey(text, m));
     render();
   } else if (act === 'dict' && m) {
     addToDict(m.bad);
@@ -452,6 +468,18 @@ function init() {
   renderDict();
 
   $('list').addEventListener('click', onListClick);
+  $('list').addEventListener('submit', e => {
+    e.preventDefault();
+    const form = e.target;
+    const index = +form.dataset.i;
+    const text = state.paras[index];
+    const m = visibleMatches(text)[+form.dataset.k];
+    const value = form.querySelector('input').value;
+    if (!m || value === m.bad) return;
+    state.editing.delete(matchKey(text, m));
+    form.querySelector('input').blur();
+    applyFixes([{ index, text, matches: [{ m, repl: value }] }]);
+  });
   $('fixAll').addEventListener('click', () => applyFixes(targetsFor(state.paras.map((_, i) => i))));
   $('auto').addEventListener('change', e => {
     state.auto = e.target.checked;
