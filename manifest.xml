@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Адрес сайта: https://therazzyartem-hash.github.io/word-grammar -->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>aab1a88a-0cd4-48e2-80cb-181fe8b40b3b</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Корректор</ProviderName>
+  <DefaultLocale>ru-RU</DefaultLocale>
+  <DisplayName DefaultValue="Корректор"/>
+  <Description DefaultValue="Проверка грамматики и орфографии по абзацам на лету. Исправление всех ошибок одной кнопкой."/>
+  <IconUrl DefaultValue="https://therazzyartem-hash.github.io/word-grammar/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://therazzyartem-hash.github.io/word-grammar/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://therazzyartem-hash.github.io/word-grammar/"/>
+  <AppDomains>
+    <AppDomain>https://api.languagetool.org</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://therazzyartem-hash.github.io/word-grammar/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="Korrektor.Group">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="Korrektor.Open">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://therazzyartem-hash.github.io/word-grammar/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://therazzyartem-hash.github.io/word-grammar/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://therazzyartem-hash.github.io/word-grammar/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://therazzyartem-hash.github.io/word-grammar/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="Group.Label" DefaultValue="Корректор"/>
+        <bt:String id="Button.Label" DefaultValue="Проверка текста"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Button.Tip" DefaultValue="Открыть панель проверки грамматики и орфографии."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

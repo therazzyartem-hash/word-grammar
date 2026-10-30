@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Корректор</title>
+  <link rel="stylesheet" href="taskpane.css">
+  <script>
+    // ?mock — тестовый стенд без Word (test.html)
+    if (/[?&]mock\b/.test(location.search)) document.write('<script src="mock-word.js"><\/script>');
+    else document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
+  </script>
+</head>
+<body>
+  <header>
+    <div class="title">Корректор</div>
+    <label class="switch" title="Проверять абзацы автоматически, пока пишешь">
+      <input type="checkbox" id="auto" checked> <span>на лету</span>
+    </label>
+  </header>
+
+  <section class="summary">
+    <div id="total" class="total">Загрузка…</div>
+    <div id="status" class="status"></div>
+    <button id="fixAll" class="primary" disabled>Исправить все</button>
+  </section>
+
+  <div id="error" class="error" hidden></div>
+
+  <div id="list" class="list"></div>
+
+  <details class="options">
+    <summary>Настройки</summary>
+    <label>Язык
+      <select id="lang">
+        <option value="ru-RU">Русский</option>
+        <option value="auto">Автоопределение</option>
+        <option value="en-US">English</option>
+        <option value="uk-UA">Українська</option>
+      </select>
+    </label>
+    <label class="row"><input type="checkbox" id="track"> Править в режиме исправлений (видно каждую правку)</label>
+    <div class="dict">
+      <div>Словарь (не считать ошибкой):</div>
+      <div id="dict" class="chips"></div>
+      <form id="dictForm"><input id="dictInput" placeholder="слово или имя"><button>Добавить</button></form>
+    </div>
+    <button id="recheck">Перепроверить весь документ</button>
+  </details>
+
+  <script src="punctuation.js"></script>
+  <script src="taskpane.js"></script>
+</body>
+</html>
