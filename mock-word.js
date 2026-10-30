@@ -53,7 +53,14 @@
   window.Word = {
     ChangeTrackingMode: { trackAll: 'TrackAll', off: 'Off' },
     async run(fn) {
-      const ctx = { document: { body: { get paragraphs() { return makeParagraphs(); } } }, sync: async () => {} };
+      // режим исправлений: текущее значение и история смен — для проверки в test.html
+      const doc = {
+        body: { get paragraphs() { return makeParagraphs(); } },
+        load() {},
+        get changeTrackingMode() { return parent.trackMode || 'Off'; },
+        set changeTrackingMode(v) { parent.trackMode = v; (parent.trackLog = parent.trackLog || []).push(v); },
+      };
+      const ctx = { document: doc, sync: async () => {} };
       return fn(ctx);
     },
   };

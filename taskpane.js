@@ -251,6 +251,34 @@ async function loop() {
 
 // ---------- правка документа ----------
 
+async function replaceMatches(ctx, targets) {
+  let fixed = 0, skipped = 0;
+  const ps = ctx.document.body.paragraphs;
+  ps.load('items/text');
+  await ctx.sync();
+
+  const jobs = [];
+  for (const { index, text, matches } of targets) {
+    const p = ps.items[index];
+    if (!p || p.text !== text) { skipped += matches.length; continue; } // абзац успели поменять
+    for (const { m, repl } of matches) {
+      const occ = occurrenceIndex(text, m.bad, m.offset);
+      if (occ < 0) { skipped++; continue; }
+      const res = p.search(searchText(m.bad), { matchCase: true, matchWildcards: false });
+      res.load('items/text');
+      jobs.push({ res, occ, m, repl });
+    }
+  }
+  await ctx.sync();
+  for (const j of jobs) {
+    const r = j.res.items[j.occ];
+    if (r && r.text === j.m.bad) { r.insertText(j.repl, 'Replace'); fixed++; }
+    else skipped++;
+  }
+  await ctx.sync();
+  return { fixed, skipped };
+}
+
 // targets: [{ index, matches: [{m, repl}] }]
 async function applyFixes(targets) {
   if (!targets.length) return;
@@ -259,32 +287,20 @@ async function applyFixes(targets) {
   try {
     await Word.run(async ctx => {
       const doc = ctx.document;
-      if (state.track && Office.context.requirements.isSetSupported('WordApi', '1.4')) {
+      // режим исправлений включаем только на время наших правок, потом возвращаем как было
+      const track = state.track && Office.context.requirements.isSetSupported('WordApi', '1.4');
+      let prevMode = null;
+      if (track) {
+        doc.load('changeTrackingMode');
+        await ctx.sync();
+        prevMode = doc.changeTrackingMode;
         doc.changeTrackingMode = Word.ChangeTrackingMode.trackAll;
       }
-      const ps = doc.body.paragraphs;
-      ps.load('items/text');
-      await ctx.sync();
-
-      const jobs = [];
-      for (const { index, text, matches } of targets) {
-        const p = ps.items[index];
-        if (!p || p.text !== text) { skipped += matches.length; continue; } // абзац успели поменять
-        for (const { m, repl } of matches) {
-          const occ = occurrenceIndex(text, m.bad, m.offset);
-          if (occ < 0) { skipped++; continue; }
-          const res = p.search(searchText(m.bad), { matchCase: true, matchWildcards: false });
-          res.load('items/text');
-          jobs.push({ res, occ, m, repl });
-        }
+      try {
+        ({ fixed, skipped } = await replaceMatches(ctx, targets));
+      } finally {
+        if (track && prevMode) { doc.changeTrackingMode = prevMode; await ctx.sync(); }
       }
-      await ctx.sync();
-      for (const j of jobs) {
-        const r = j.res.items[j.occ];
-        if (r && r.text === j.m.bad) { r.insertText(j.repl, 'Replace'); fixed++; }
-        else skipped++;
-      }
-      await ctx.sync();
     });
     setStatus(`Исправлено: ${fixed}` + (skipped ? `, пропущено: ${skipped} (текст изменился — перепроверю)` : ''));
   } catch (e) {
